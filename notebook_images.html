@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Notebook</title>
+  <script
+  src="https://code.jquery.com/jquery-3.3.1.min.js"
+  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+  crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Kalam:300,400,700">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,700">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.9/css/all.css" integrity="sha384-5SOiIsAziJl6AWe0HWRKTXlfcSHKmYV4RBF18PPJ173Kzn7jzMyFuTtk8JA7QQG1" crossorigin="anonymous">
+
+<style>
+body {
+  font-family: "Kalam", sans-serif;
+  background: #ddd;
+  color: #333;
+}
+
+.page_title {
+  font-weight: 700;
+  margin: 20px 0 -8px 10px;
+  font-size: 2.6rem;
+}
+
+#entry_form {
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+  margin: auto;
+}
+
+.entry_form_buttons {
+  display: flex;
+  justify-content: space-between;
+}
+
+#notebook {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  align-items: flex-start;
+  margin-top: 12px;
+}
+
+.notebook_entry {
+  background: #fff;
+  border-radius: 2px;
+  margin: 1rem;
+  width: calc(50% - 4.5rem);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  padding: 10px 20px 10px 20px;
+  position: relative;
+}
+
+.notebook_entry h1,
+.notebook_entry h2 {
+  margin: 0;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+.notebook_entry h1 {
+  font-size: 1.7rem;
+  margin-bottom: -2px;
+}
+
+.notebook_entry h2 {
+  font-weight: 400;
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+  line-height: 1.45rem;
+  white-space: pre-wrap;
+}
+
+button,
+.image_handler_label,
+#upload_image {
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+  height: 35px;
+  line-height: 35px;
+  padding: 0 1rem;
+  margin-right: 5px;
+  color: #424242;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: 'Roboto', sans-serif;
+  letter-spacing: .8px;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+  vertical-align: middle;
+  white-space: nowrap;
+  outline: none;
+  border: none;
+  user-select: none;
+  border-radius: 2px;
+  transition: all .3s ease-out;
+  box-shadow: none !important;
+  background-color: transparent !important;
+}
+button:hover,
+.image_handler_label:hover,
+#upload_image:hover {
+  background-color: #cecece !important;
+  box-shadow: none !important;
+}
+
+button#add_entry {
+  width: 33%;
+}
+label#upload_image {
+  width: 33%;
+}
+button#cancel_entry {
+  width: 33%;
+}
+
+input,
+textarea {
+    font-family: "Roboto", sans-serif;
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid #9e9e9e;
+    border-radius: 0;
+    outline: none;
+    height: 3rem;
+    width: 100%;
+    font-size: 16px;
+    margin: 0 0 8px 0;
+    padding: 0;
+    box-shadow: none;
+    box-sizing: content-box;
+    transition: border .3s;
+    transition: box-shadow .3s, border .3s;
+}
+input:focus,
+textarea:focus {
+  border-bottom: 2px solid #9e9e9e;
+}
+
+.fa-star {
+  position: absolute;
+  bottom: 17px;
+  right: 15px;
+  font-size: 1.15rem;
+  cursor: pointer;
+}
+.fas.fa-star {
+  color: #FDD835;
+}
+
+.image_container {
+	display: flex !important;
+}
+.image_container img {
+	max-width: 100%;
+	margin: 10px auto 40px auto;
+	align-self: center;
+}
+</style>
+</head>
+
+<body>
+<h1 class="page_title">My Notebook</h1>
+<button id="toggleEntryForm">New Entry</button>
+
+<div id="entry_form" style="display: none">
+  <input id="entry_title" placeholder="Title (required)">
+  <textarea id="entry_info" placeholder="Info"></textarea>
+  <input id="entry_image" placeholder="Image URL">
+  <div class="entry_form_buttons">
+    <button id="add_entry">Add Entry</button>
+    <label id="upload_image" for="addEntry_image">Upload Image</label>
+    <input type='file' id='addEntry_image' style='display:none' accept='.jpeg,.jpg,.gif,.png,.apng,.svg,.bmp,.ico'>
+    <button id="cancel_entry">Cancel</button>
+  </div>
+</div>
+
+<div id="notebook">
+
+</div>
+
+<script>
+$(document).ready(function() {
+// Items will be objects -> {title:"Example", info:"Description", starred:false, img:""}
+var notebook = [
+  {title:"Example", info:"Description", starred:false, img:""},
+  {title:"Example 2", info:"Description 2", starred:true, img:""}
+];
+
+displayNotebook(notebook);
+
+//// FUNCTIONS ////
+function addEntry(array) {
+  var title = document.getElementById("entry_title").value;
+  var info = document.getElementById("entry_info").value;
+  var img = document.getElementById("entry_image").value;
+  
+  if (title) {
+    array.unshift({title:title, info:info, starred:false, img:img});
+    document.getElementById("entry_title").value = "";
+    document.getElementById("entry_info").value = "";
+    document.getElementById("entry_image").value = "";
+    toggleElement("entry_form", "flex");
+    displayNotebook(array);
+  }
+}
+function editEntry(id, array, updated_title, updated_info, starred, url) {
+  var new_entry = {title:updated_title, info:updated_info, starred:starred, img:url};
+  array[id] = new_entry;
+
+  displayNotebook(array);
+}
+function deleteEntry(id, array) {
+  array.splice(id, 1);
+  
+  displayNotebook(array);
+}
+
+function editImage(id, url, array) {
+  array[id].img = url;
+
+  displayNotebook(array);
+}
+
+function changeStar(id, array) {
+  if (array[id].starred) {
+    array[id].starred = false;
+  } else {
+    array[id].starred = true;
+  }
+
+  displayNotebook(array);
+}
+
+function displayNotebook(array) {
+  document.getElementById("notebook").innerHTML = "";
+  
+  for (var i = 0; i < array.length; i++) {
+    var entry = document.createElement("div");
+	
+    entry.setAttribute("class","notebook_entry");
+    entry.setAttribute("id","entry_" + i);
+	
+    var html = "";
+    html += "<h1 id='entry_" + i + "_title'>" + array[i].title + "</h1>";
+    html += "<h2 id='entry_" + i + "_info'>" + array[i].info + "</h2>";
+    html += "<input id='edit_" + i + "_title' value='" + array[i].title + "' style='display:none' placeholder='Title (required)'>";
+    html += "<textarea id='edit_" + i + "_info' style='display:none' placeholder='Info'>" + array[i].info + "</textarea>";
+    html += "<input id='edit_" + i + "_img' value='" + array[i].img + "' style='display:none' placeholder='Image URL'>";
+    html += "<button class='edit_entry' id='edit_" + i + "'>Edit</button>";
+    html += "<button class='save_entry' id='save_" + i + "' style='display:none'>Save</button>";
+    html += "<label class='image_handler_label' id='image_handler_label_" + i + "' for='img_" + i + "' style='cursor:pointer'>" + determineImageText(array[i].img) + "</label>";
+    html += "<input type='file' class='image_handler' id='img_" + i + "' style='display:none' accept='.jpeg,.jpg,.gif,.png,.apng,.svg,.bmp,.ico'>";
+    html += "<button class='delete_entry' id='delete_" + i + "'>Delete</button>";
+    html += "<i class='fa" + determineStar(array[i].starred) + " fa-star' id='star_" + i + "'></i>";
+    html += "<div class='image_container' id='img_" + i + "'>" + determineImageHTML(array[i].img) + "</div>";
+	
+    entry.innerHTML = html;
+    document.getElementById("notebook").appendChild(entry);
+  }
+}
+
+function determineStar(input) {
+  if (input) {
+    return "s";
+  } else {
+    return "r";
+  }
+}
+
+function determineImageText(input) {
+  if (input) {
+    return "Change Image";
+  } else {
+    return "Upload Image";
+  }
+}
+
+function determineImageHTML(input) {
+  if (input) {
+    return "<img src='" + input + "'>";
+  } else {
+    return "";
+  }
+}
+
+function toggleElement(id, preferred) {
+    var element = document.getElementById(id);
+    if (element.style.display === "none") {
+        element.style.display = preferred;
+    } else {
+        element.style.display = "none";
+    }
+}
+
+//// ON EVENTS ////
+// Entry Form //
+$("#toggleEntryForm").click(function(){
+  toggleElement("entry_form", "flex");
+});
+$("#add_entry").click(function(){
+  addEntry(notebook);
+});
+$("#cancel_entry").click(function(){
+  toggleElement("entry_form", "flex");
+  $("#entry_title").val("");
+  $("#entry_info").val("");
+  $("#entry_image").val("");
+});
+document.getElementById("entry_title").addEventListener("keyup", function(e) {
+  e.preventDefault();
+  
+  if (e.keyCode === 13) {
+    document.getElementById("add_entry").click();
+  }
+});
+document.getElementById("entry_info").addEventListener("keyup", function(e) {
+  e.preventDefault();
+  if (e.ctrlKey && e.keyCode === 13) { 
+    document.getElementById("add_entry").click();
+  }
+});
+document.getElementById("entry_image").addEventListener("keyup", function(e) {
+  e.preventDefault();
+  
+  if (e.keyCode === 13) {
+    document.getElementById("add_entry").click();
+  }
+});
+$(document).on("change", "#addEntry_image", function(){
+  var file = document.getElementById("addEntry_image").files[0];
+  var url = URL.createObjectURL(file);
+  console.log(url);
+  $("#entry_image").val(url);
+});
+
+// Entry //
+$(document).on("click", ".fa-star", function(){
+  var id = $(this).attr("id").split("_").pop();
+  
+  changeStar(id, notebook);
+});
+$(document).on("click", ".edit_entry", function(){
+  var id = $(this).attr("id").split("_").pop();
+
+  // Hide
+  toggleElement("entry_" + id + "_title", "block");
+  toggleElement("entry_" + id + "_info", "block");
+  toggleElement("edit_" + id, "inline-block");
+  toggleElement("delete_" + id, "inline-block");
+  toggleElement("image_handler_label_" + id, "inline-block");
+  // Show
+  toggleElement("edit_" + id + "_title", "block");
+  toggleElement("edit_" + id + "_info", "block");
+  toggleElement("edit_" + id + "_img", "block");
+  toggleElement("save_" + id, "inline-block");
+});
+$(document).on("click", ".save_entry", function(){
+  var id = $(this).attr("id").split("_").pop();
+
+  var updated_title = $("#edit_" + id + "_title").val();
+  var updated_info = $("#edit_" + id + "_info").val();
+  var starred;
+  var url = $("#edit_" + id + "_img").val();
+  if ($("#star_" + id).hasClass("far")) {
+    starred = false;
+  } else {
+    starred = true;
+  }
+  
+  if (updated_title) {
+    editEntry(id, notebook, updated_title, updated_info, starred, url);
+  }
+});
+$(document).on("change", ".image_handler", function(){
+  var entry_id = parseInt($(this).attr("id").split("_").pop());
+  var file = document.getElementById("img_" + entry_id).files[0];
+  var url = URL.createObjectURL(file);
+  console.log(url);
+  editImage(entry_id, url, notebook);
+});
+$(document).on("click", ".delete_entry", function(){
+  var entry_id = parseInt($(this).attr("id").split("_").pop());
+  deleteEntry(entry_id, notebook);
+});
+});
+</script>
+</body>
+</html>
